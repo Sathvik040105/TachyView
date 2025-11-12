@@ -12,7 +12,7 @@ TachyView is a web-based visualization tool that combines topological spines, an
 3. When iterating on the source, open Developer Tools → Network tab and enable **Disable cache** to ensure code changes are reloaded.
 4. Use the **Volume** panel to load one of the sample datasets in [data/volumes](data/volumes) or your own `.vtk` file.
 
-The volume renderer currently offers 2D slicing, 3D slabs, and GPU ray marching implementations via the modules in [volume_rendering/techniques](volume_rendering/techniques).
+The volume renderer currently offers 2D-texture based volume rendering, 3D-texture based volume rendering which include view-aligned slicing of the 3D-texture, and ray marching implementations via the modules in [volume_rendering/techniques](volume_rendering/techniques).
 
 ## Roadmap
 
