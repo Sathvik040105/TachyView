@@ -213,14 +213,17 @@ export const Shaders = {
                 rayDir = normalize(rayDir);
                 vec4 accumulated = vec4(0.0);
 
-                float fNumSteps = rayLength / uStepSize;
-                int numSteps = int(min(max(fNumSteps, 1.0), 512.0));
+                float maxSteps = 1024.0;
+                float desiredSteps = rayLength / max(uStepSize, 1e-4);
+                float stepCount = clamp(desiredSteps, 1.0, maxSteps);
+                float actualStep = rayLength / stepCount;
+                int numSteps = int(stepCount + 0.5);
 
-                for (int i = 0; i < 512; i++) {
+                for (int i = 0; i < 1024; i++) {
                     if (i >= numSteps) break;
                     if (accumulated.a >= 0.95) break;
 
-                    float t = float(i) * uStepSize;
+                    float t = float(i) * actualStep;
                     vec3 samplePos = entryPoint + rayDir * t;
 
                     if (any(lessThan(samplePos, vec3(0.0))) ||
@@ -233,7 +236,7 @@ export const Shaders = {
                     vec3 color = texture2D(uColormap, vec2(intensity, 0.5)).rgb;
                     float opacity = texture2D(uOpacitymap, vec2(intensity, 0.5)).r;
 
-                    opacity = 1.0 - pow(1.0 - opacity, uStepSize * 200.0);
+                    opacity = 1.0 - pow(1.0 - opacity, actualStep * 200.0);
 
                     vec3 src = color * opacity;
                     accumulated.rgb += (1.0 - accumulated.a) * src;

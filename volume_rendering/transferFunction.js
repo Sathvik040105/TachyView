@@ -76,8 +76,6 @@ export class TransferFunctionEditor {
         this.opacityInput.addEventListener('input', () => {
             const point = this.points[this.selectedIndex];
             point.opacity = parseFloat(this.opacityInput.value);
-            if (this.selectedIndex === 0) point.opacity = 0;
-            if (this.selectedIndex === this.points.length - 1) point.opacity = 1;
             this.updateTextures();
         });
 
