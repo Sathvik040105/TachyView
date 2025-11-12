@@ -1,0 +1,19 @@
+# TachyView
+
+TachyView is a web-based visualization tool that combines topological spines, and volume rendering to enable intuitive, interactive exploration of scalar fields directly in a browser.
+
+## Running the web app
+
+1. Start a static file server in the project root:
+   ```bash
+   python3 -m http.server
+   ```
+2. Open the reported URL (by default `http://0.0.0.0:8000/` or `http://localhost:8000/`) in a WebGL-capable browser.
+3. When iterating on the source, open Developer Tools → Network tab and enable **Disable cache** to ensure code changes are reloaded.
+4. Use the **Volume** panel to load one of the sample datasets in [data/volumes](data/volumes) or your own `.vtk` file.
+
+The volume renderer currently offers 2D slicing, 3D slabs, and GPU ray marching implementations via the modules in [volume_rendering/techniques](volume_rendering/techniques).
+
+## Roadmap
+
+Topological spine visualizations will be documented here after their implementation is integrated.
