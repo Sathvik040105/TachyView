@@ -175,7 +175,7 @@ export class RayMarchingRenderer {
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
         gl.viewport(0, 0, width, height);
-        gl.clearColor(0, 0, 0, 0);
+        gl.clearColor(1, 1, 1, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.enable(gl.DEPTH_TEST);
@@ -199,7 +199,7 @@ export class RayMarchingRenderer {
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
         gl.viewport(0, 0, width, height);
-        gl.clearColor(0, 0, 0, 1);
+        gl.clearColor(1, 1, 1, 1);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         gl.useProgram(this.raycastProgram);

@@ -68,7 +68,7 @@ export class BoundingBox {
         
         // Set color (yellow)
         const colorLoc = gl.getUniformLocation(this.program, 'uColor');
-        gl.uniform3f(colorLoc, 1.0, 1.0, 0.0);
+        gl.uniform3f(colorLoc, 0.0, 0.0, 0.0);
         
         // Bind and draw
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vao.buffer);
