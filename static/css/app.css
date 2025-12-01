@@ -1,0 +1,330 @@
+h2 {
+    font: 14px Arial, sans-serif;
+    color: grey;
+    padding: 10px;
+    text-align: center;
+}
+
+html, body {
+    height: 100%;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+}
+
+form {
+    margin-top: 20%;
+    width: 70%;
+}
+
+form div {
+    margin-top: 20px;
+}
+
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 80px;
+    height: 28px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+#wrapper {
+    height: 100%;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+}
+
+#menuContainer {
+    width: 320px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #f5f5f5;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    color: #333;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+#menuContainer h1 {
+    margin: 0 0 12px;
+    font-size: 22px;
+    color: #167ac6;
+}
+
+#menuContainer li {
+    display: none; /* Hide original draggable menu items */
+}
+
+#layoutContainer {
+    width: calc(100% - 320px);
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 320px;
+}
+
+.axis line, .axis path {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+}
+
+#filter_control {
+    margin: 5%;
+    width: 30%;
+    float: left;
+}
+
+#function_dialog {
+    position: absolute;
+    width: 30%;
+    max-height: 50%;
+    border-radius: 25px;
+    background: #f3f3f3;
+;
+    border: 2px solid #e7e7e7;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    display: none;
+    z-index: 100;
+}
+
+.alert_dialog {
+    position: absolute;
+    width: 30%;
+    max-height: 20%;
+    border-radius: 25px;
+    border: 2px solid #e7e7e7;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin: auto;
+    display: none;
+}
+
+.dialog {
+    width: 45%;
+    float: left;
+    margin: 2%;
+}
+
+.dialog input {
+    margin: 2%;
+}
+
+table {
+    width: 60%;
+    text-align: center;
+    /*margin: auto;*/
+    /*margin-top: %;*/
+    /*border: 1px solid black;*/
+}
+
+table th,
+tr {
+    text-align: center;
+}
+
+.scattersvg {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    left: 0;
+}
+
+.scattercvs {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Hide Neighborhood component if it renders (kept functional in backend) */
+.lm_item_container .lm_content[data-component-name="Neighborhood"],
+.lm_stack .lm_item[title="Neighborhood"] {
+    display: none !important;
+}
+
+/* Volume Rendering Sidebar Styles */
+section.panel {
+    margin-bottom: 24px;
+    padding: 14px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+}
+
+section.panel h2 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #167ac6;
+    font-weight: 600;
+}
+
+.technique-btns button {
+    display: inline-block;
+    margin: 4px 4px 0 0;
+    padding: 6px 10px;
+    background: #f9f9f9;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.technique-btns button:hover {
+    background: #167ac6;
+    border-color: #167ac6;
+    color: #fff;
+}
+
+#menuContainer .technique-btns button.active {
+    background: #167ac6 !important;
+    border-color: #167ac6 !important;
+    color: #fff !important;
+}
+
+#menuContainer .technique-btns button.active:hover {
+    background: #1890e0 !important;
+    border-color: #1890e0 !important;
+}
+
+.control-group {
+    margin-bottom: 12px;
+}
+
+.control-group label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 4px;
+    color: #666;
+}
+
+.control-group input[type="range"] {
+    width: 100%;
+}
+
+#volume-stats p {
+    margin: 4px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+#loading {
+    font-size: 13px;
+    color: #167ac6;
+}
+
+#tf-canvas {
+    width: 100%;
+    height: 180px;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    cursor: crosshair;
+    display: block;
+}
+
+.tf-controls {
+    margin-top: 12px;
+    display: grid;
+    gap: 10px;
+}
+
+.tf-controls label {
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #666;
+}
+
+.tf-controls input[type="color"] {
+    width: 60px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.tf-controls input[type="range"] {
+    flex: 1;
+}
+
+.tf-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.tf-buttons button {
+    flex: 1;
+    padding: 6px 0;
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.tf-buttons button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+#fps {
+    font-size: 12px;
+    color: #167ac6;
+}
+
+.technique-controls {
+    color: #333;
+}
+
+#menuContainer input[type="file"] {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+#menuContainer button {
+    background: #f9f9f9;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    color: #333;
+    cursor: pointer;
+    padding: 8px;
+    font-size: 13px;
+    width: 100%;
+}
+
+#menuContainer button:hover {
+    background: #167ac6;
+    border-color: #167ac6;
+}
+
+#menuContainer small {
+    color: #666;
+    font-size: 11px;
+}

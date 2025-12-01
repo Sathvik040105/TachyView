@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- <link type="text/css" rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"> -->
+  <!-- <link type="text/css" rel="stylesheet" href="https://golden-layout.com/files/latest/css/goldenlayout-base.css" /> -->
+  <link type="text/css" rel="stylesheet" href="../../static/css/bootstrap.min.css">
+  <link type="text/css" rel="stylesheet" href="../../static/css/goldenlayout-base.css" />
+  <link type="text/css" rel="stylesheet" href="../../static/css/goldenlayout-light-theme.css" />
+  <link type="text/css" rel="stylesheet" href="../../static/css/d3.parcoords.css">
+  <link type="text/css" rel="stylesheet" href="../../static/css/app.css">
+  <link type="text/css" rel="stylesheet" href="../../static/css/slider.css">
+  <link type="text/css" rel="stylesheet" href="../../static/css/scatter.css">
+
+  <!-- <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script> -->
+  <!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
+  <!-- <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script> -->
+  <!-- <script type="text/javascript" src="https://golden-layout.com/files/latest/js/goldenlayout.min.js"></script> -->
+  <!-- <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.5/socket.io.min.js"></script> -->
+  <script type="text/javascript" src="../../static/lib/d3.v3.min.js" charset="utf-8"></script>
+  <!-- <script type="text/javascript" src="../../static/lib/d3-color.v1.min.js" charset="utf-8"></script> -->
+  <script type="text/javascript" src="../../static/lib/jquery.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/tether.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/goldenlayout.min.js"></script>
+  <script type="text/javascript" src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/chroma.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/utilityFunctions.js"></script>
+  <script type="text/javascript" src="../../static/lib/mustache.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/clipper.js"></script>
+  <!-- <script type="text/javascript" src="http://wzrd.in/standalone/uuid%2Fv1@latest"></script> -->
+  <script type="text/javascript" src="../../static/lib/uuidv1.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3.centerScale.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3-ForceEdgeBundling.js"></script>
+  <script type="text/javascript" src="../../static/lib/fabric.min.js"></script>
+  <script type="text/javascript" src="../../static/lib/vectorious.min.js"></script>
+
+  <script type="text/javascript" src="../../static/lib/d3UIitemSelector.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3UIslider.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3UIcolorMap.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3UIglyph.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3.parcoords.js"></script>
+  <script type="text/javascript" src="../../static/lib/d3CheckBox.js"></script>
+  <script type="text/javascript" src="../../static/lib/parallel.js"></script>
+
+  <script type="text/javascript" src="../../static/plots/basePlot.js"></script>
+  <script type="text/javascript" src="../../static/plots/persistencePlot.js"></script>
+  <script type="text/javascript" src="../../static/plots/topospinesPlot.js"></script>
+
+  <script type="text/javascript" src="../../static/components/baseComponent.js"></script>
+  <script type="text/javascript" src="../../static/components/filterComponent.js"></script>
+  <script type="text/javascript" src="../../static/components/hdfileComponent.js"></script>
+  <script type="text/javascript" src="../../static/components/topospineComponent.js"></script>
+  <script type="text/javascript" src="../../static/components/volumeRenderingComponent.js"></script>
+
+  <script type="text/javascript" src="../../static/glayout.js"></script>
+
+<link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
+
+  <!-- <script type="text/javascript" src="../../static/lib/vue.js"></script> -->
+  <!-- <script src="https://unpkg.com/vue"></script> -->
+</head>
+
+
+<body>
+  <div id="wrapper">
+    <!-- <div id="menu"> -->
+        <ul id="menuContainer">
+            <h1>TachyView</h1>
+
+            <section class="panel">
+                <h2>Upload Volume Data</h2>
+                <input type="file" id="vtk-file-input" accept=".vtk" style="display:none;">
+                <button id="select-vtk-btn" class="btn btn-primary" style="width:100%;">Select VTK File</button>
+                <p style="font-size:12px; margin-top:10px; color:#666;">Upload a .vtk file for both Volume Rendering and Topological Spines visualization</p>
+            </section>
+
+            <section class="panel">
+                <h2>Volume Stats</h2>
+                <p id="loading">Load a VTK file to begin.</p>
+                <div id="volume-stats">
+                    <p>Dimensions: <span id="dimensions">—</span></p>
+                    <p>Spacing: <span id="spacing">—</span></p>
+                    <p>Scalar Range: <span id="range">—</span></p>
+                </div>
+                <p id="fps">FPS: —</p>
+            </section>
+
+            <section class="panel">
+                <h2>Technique</h2>
+                <div class="technique-btns">
+                    <button class="technique-btn active" data-technique="2d">2D-Texture</button>
+                    <button class="technique-btn" data-technique="3d">3D Texture</button>
+                    <button class="technique-btn" data-technique="ray">Ray Casting</button>
+                </div>
+            </section>
+
+            <section class="panel">
+                <h2>Technique Settings</h2>
+                <div id="controls-2d" class="technique-controls">
+                    <p style="font-size:12px;color:#888;">No extra parameters for 2D slicing.</p>
+                </div>
+                <div id="controls-3d" class="technique-controls" style="display:none;">
+                    <div class="control-group">
+                        <label>Opacity Multiplier <span id="opacity-3d-value">5.0</span></label>
+                        <input type="range" id="opacity-3d" min="0.1" max="10" step="0.1" value="5.0">
+                    </div>
+                    <div class="control-group">
+                        <label>Slice Count <span id="slices-3d-value">128</span></label>
+                        <input type="range" id="slices-3d" min="32" max="512" step="1" value="128">
+                    </div>
+                </div>
+                <div id="controls-ray" class="technique-controls" style="display:none;">
+                    <div class="control-group">
+                        <label>Step Size <span id="stepsize-ray-value">0.005</span></label>
+                        <input type="range" id="stepsize-ray" min="0.001" max="0.05" step="0.001" value="0.005">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Brightness <span id="brightness-value">1.0</span></label>
+                    <input type="range" id="brightness" min="0.1" max="3.0" step="0.1" value="1.0">
+                </div>
+                <button id="reset-view">Reset View</button>
+            </section>
+
+            <section class="panel" id="transfer-panel">
+                <h2>Transfer Function</h2>
+                <canvas id="tf-canvas" width="256" height="180"></canvas>
+                <div class="tf-controls">
+                    <label>Color
+                        <input type="color" id="tf-color" value="#ffffff">
+                    </label>
+                    <label>Opacity
+                        <input type="range" id="tf-opacity" min="0" max="1" step="0.01" value="1">
+                    </label>
+                    <div class="tf-buttons">
+                        <button id="tf-add">Add Point</button>
+                        <button id="tf-remove" disabled>Remove Point</button>
+                    </div>
+                    <small>• Drag points on the plot<br>• Click "Add Point" to insert at 0.5<br>• Endpoints stay at 0 and 1</small>
+                </div>
+            </section>
+        </ul>
+    <!-- </div> -->
+
+    <!-- Hidden filter component container for backend data handling -->
+    <div id="hidden-filter-container" style="display:none;"></div>
+
+    <div id="layoutContainer"></div>
+  </div>
+</body>
+
+<script type="text/javascript" src="../../static/main.js"></script>
+<script type="text/javascript">
+  // Create hidden filterComponent instance for data loading from sidebar
+  // This needs to run after main.js loads but before GoldenLayout initializes
+  $(document).ready(function() {
+    // Wait for socket connection
+    setTimeout(function() {
+      // Create the filterComponent in the hidden container
+      const hiddenFilterContainer = document.getElementById('hidden-filter-container');
+      if (hiddenFilterContainer) {
+        const uuid = uuidv1();
+        hiddenFilterContainer.id = 'div_' + uuid;
+        const filterComp = new filterComponent(hiddenFilterContainer.id);
+        console.log('Hidden filterComponent created with ID:', hiddenFilterContainer.id);
+      }
+    }, 500); // Give socket.io time to connect
+  });
+</script>
+
+</html>
