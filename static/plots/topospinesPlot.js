@@ -13,6 +13,29 @@ class topospinesPlot {
 
         //init the persistence plot
         this.svg = d3.select(this._div).append("svg").attr("id", "topoSvg");
+
+        // Container that will receive zoom/pan transforms
+        this.zoomLayer = this.svg.append("g").attr("class", "spine-zoom-layer");
+
+        // Invisible pane that captures zoom interactions (sized later)
+        this.zoomPane = this.svg.insert("rect", ".spine-zoom-layer")
+            .attr("class", "spine-zoom-pane")
+            .style("fill", "transparent")
+            .style("pointer-events", "all");
+
+        this.zoomBehavior = d3.behavior.zoom()
+            .scaleExtent([0.5, 8])
+            .on("zoom", this._handleZoom.bind(this));
+
+        this.zoomTransform = {
+            scale: 1,
+            translate: [0, 0]
+        };
+
+        this.zoomViewport = null;
+
+        this.zoomPane.call(this.zoomBehavior);
+
         this.pPlot = new persistencePlot(this.svg);
         this.pPlot.setComputeSpineCallback(this.computeSpine.bind(this));
 
@@ -29,6 +52,7 @@ class topospinesPlot {
         this.clearEmptySpineMessage();
         this.updateDimSelector(this.data['rangeNames'], this.data['fname']);
         // console.log(this.data);
+        this.resetZoom();
         this.draw();
     }
 
@@ -59,6 +83,116 @@ class topospinesPlot {
         this.hoverExtrema = func;
     }
 
+    resetZoom() {
+        if (!this.zoomBehavior) {
+            return;
+        }
+        this.zoomTransform = {
+            scale: 1,
+            translate: [0, 0]
+        };
+        this.zoomBehavior.scale(1);
+        this.zoomBehavior.translate([0, 0]);
+        if (this.zoomPane) {
+            this.zoomBehavior.event(this.zoomPane);
+        } else {
+            this._applyZoom();
+        }
+    }
+
+    _handleZoom() {
+        if (!d3.event) {
+            return;
+        }
+        var translate = d3.event.translate instanceof Array ? d3.event.translate.slice() : d3.event.translate;
+        this.zoomTransform = {
+            scale: d3.event.scale,
+            translate: translate
+        };
+        this._applyZoom();
+    }
+
+    _applyZoom() {
+        if (this.zoomLayer) {
+            this.zoomLayer.attr("transform", "translate(" + this.zoomTransform.translate + ") scale(" + this.zoomTransform.scale + ")");
+        }
+    }
+
+    _updateZoomPane(bounds) {
+        if (!this.zoomPane) {
+            return;
+        }
+
+        var padding = 20;
+        var canvasWidth = this.pwidth || this.width || 0;
+        var canvasHeight = this.pheight || this.height || 0;
+
+        if (!bounds) {
+            if (canvasWidth && canvasHeight) {
+                this.zoomPane
+                    .attr("x", 0)
+                    .attr("y", 0)
+                    .attr("width", canvasWidth)
+                    .attr("height", canvasHeight);
+            }
+            return;
+        }
+
+        var minX = Math.max(0, bounds.x - padding);
+        var minY = Math.max(0, bounds.y - padding);
+        var maxX = canvasWidth ? Math.min(canvasWidth, bounds.x + bounds.width + padding) : bounds.x + bounds.width + padding;
+        var maxY = canvasHeight ? Math.min(canvasHeight, bounds.y + bounds.height + padding) : bounds.y + bounds.height + padding;
+
+        var width = Math.max(10, maxX - minX);
+        var height = Math.max(10, maxY - minY);
+
+        this.zoomPane
+            .attr("x", minX)
+            .attr("y", minY)
+            .attr("width", width)
+            .attr("height", height);
+    }
+
+    _updateZoomExtents(xpos, ypos) {
+        if (!this.cScale || !xpos || !xpos.length || !ypos || !ypos.length) {
+            this.zoomViewport = null;
+            this._updateZoomPane();
+            return;
+        }
+
+        var projectedX = xpos.map(function(val) {
+            return this.cScale.x(val);
+        }, this);
+        var projectedY = ypos.map(function(val) {
+            return this.cScale.y(val);
+        }, this);
+
+        if (!projectedX.length || !projectedY.length) {
+            this.zoomViewport = null;
+            this._updateZoomPane();
+            return;
+        }
+
+        var xExtent = d3.extent(projectedX);
+        var yExtent = d3.extent(projectedY);
+
+        if (!xExtent || !yExtent || !isFinite(xExtent[0]) || !isFinite(xExtent[1]) ||
+            !isFinite(yExtent[0]) || !isFinite(yExtent[1])) {
+            this.zoomViewport = null;
+            this._updateZoomPane();
+            return;
+        }
+
+        this.zoomViewport = {
+            x: xExtent[0],
+            y: yExtent[0],
+            width: Math.max(1, xExtent[1] - xExtent[0]),
+            height: Math.max(1, yExtent[1] - yExtent[0])
+        };
+
+        this._updateZoomPane(this.zoomViewport);
+    }
+
     draw() {
         // console.log(this.data);
         if (this._isValid()) {
@@ -68,6 +202,7 @@ class topospinesPlot {
                 .concat(this.data.nodes.map(d => Number(d.functionValue)));
 
             this.svg.attr("width", this.pwidth).attr("height", this.pheight);
+            this._updateZoomPane();
 
             if (!this.colorMap) {
                 this.colorMap =
@@ -241,8 +376,13 @@ class topospinesPlot {
         // console.log("scale = ", this.scale());
         // Clear any empty spine message when drawing
         this.clearEmptySpineMessage();
-        this.svg.select("#topospine").remove();
-        var svgContainer = this.svg.append("g").attr("id", "topospine");
+
+        if (!this.zoomLayer) {
+            this.zoomLayer = this.svg.append("g").attr("class", "spine-zoom-layer");
+        }
+
+        this.zoomLayer.select("#topospine").remove();
+        var svgContainer = this.zoomLayer.append("g").attr("id", "topospine");
         // var contours = this.data['contourPath'];
         // var funcValueStrings = Object.keys(contours);
 
@@ -273,8 +413,19 @@ class topospinesPlot {
                     ypos.push(path[l][1]);
                 }
             }
+
+            if (this.data && this.data['nodes']) {
+                this.data['nodes'].forEach(function(node) {
+                    if (node && node.position) {
+                        xpos.push(node.position[0]);
+                        ypos.push(node.position[1]);
+                    }
+                });
+            }
             
             this.updateScale(xpos, ypos);
+
+            this._updateZoomExtents(xpos, ypos);
 
             for (var j = 0; j < sortedfuncValueStrings.length; j++) {
                 var key = sortedfuncValueStrings[j];
@@ -312,11 +463,22 @@ class topospinesPlot {
                 // }
             }
 
+            if (this.data && this.data['nodes']) {
+                this.data['nodes'].forEach(function(node) {
+                    if (node && node.position) {
+                        xpos.push(node.position[0]);
+                        ypos.push(node.position[1]);
+                    }
+                });
+            }
+
             // t2 = new Date();
             // console.log(((t2 - t1)/1000) + " seconds");
 
 
             this.updateScale(xpos, ypos);
+
+            this._updateZoomExtents(xpos, ypos);
 
             var occupancyColor = d3.scale.linear()
                 .domain([0.0, 1.0])
