@@ -10,6 +10,19 @@ class DataContext(object):
         self._store = dict()
         self._sharedValues = dict()
         self._modules = []
+    
+    def reset(self):
+        """Reset all stored data in proxies to clear cached state, but keep module structure."""
+        print("DataContext.reset: Clearing all cached proxy data (keeping modules)")
+        # Clear all stored proxy data but keep the proxy objects themselves
+        for proxyType in self._store:
+            for proxy in self._store[proxyType]:
+                proxy._data = None
+                # Reset the history to prevent "history disagree" errors
+                proxy.history = DataHistory(proxy)
+        # Clear shared values
+        self._sharedValues.clear()
+        # Don't clear modules - they need to stay registered
 
     def addModule(self, module_type, **kwargs):
         print ("DataContext.addSubModule", module_type, kwargs)

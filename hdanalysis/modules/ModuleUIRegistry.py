@@ -32,7 +32,11 @@ class ModuleUIRegistry:
         ###### manage multiple context #####
 
     def clear(self):
+        """Clear and reset the entire registry including data context."""
+        print("ModuleUIRegistry.clear: Resetting registry and data context")
         if len(self.uid2Module):
+            # Reset the data context to clear cached data
+            self.context.reset()
             self.__init__(self.sio)
 
     def setArgs(self, args):

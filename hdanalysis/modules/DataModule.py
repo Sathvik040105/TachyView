@@ -128,9 +128,14 @@ class DataModule(Module):
 
 
     def loadFile(self, filename):
+        # Reset the data context to clear all cached data from previous file
+        print(f"\n========== Loading new file: {filename} ==========")
+        print("Resetting data context to clear cached data...")
+        self._context.reset()
+        
         # Check if it's a VTK file that needs conversion
         if str(filename).lower().endswith('.vtk'):
-            print(f"\n========== Converting VTK file to TXT format ==========")
+            print(f"========== Converting VTK file to TXT format ==========")
             from ..core.VTKConverter import vtk_to_txt
             
             # Generate output filename (same name but .txt extension)

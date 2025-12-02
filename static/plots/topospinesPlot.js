@@ -25,6 +25,8 @@ class topospinesPlot {
 
     setData(spines) {
         this.data = spines;
+        // Clear any empty spine message when setting new valid data
+        this.clearEmptySpineMessage();
         this.updateDimSelector(this.data['rangeNames'], this.data['fname']);
         // console.log(this.data);
         this.draw();
@@ -164,8 +166,81 @@ class topospinesPlot {
             });
     }
 
+    showEmptySpineMessage(message) {
+        // Clear previous spine visualization
+        this.svg.select("#topospine").remove();
+        this.svg.select("#emptySpineMessage").remove();
+        
+        // Get dimensions
+        this._updateWidthHeight();
+        var centerX = this.width / 2;
+        var centerY = this.height / 2;
+        
+        // Create message group
+        var messageGroup = this.svg.append("g").attr("id", "emptySpineMessage");
+        
+        // Add background rectangle (made taller and wider for text)
+        messageGroup.append("rect")
+            .attr("x", centerX - 250)
+            .attr("y", centerY - 70)
+            .attr("width", 500)
+            .attr("height", 140)
+            .attr("fill", "#fff3cd")
+            .attr("stroke", "#ffc107")
+            .attr("stroke-width", 2)
+            .attr("rx", 5);
+        
+        // Add warning icon (triangle with exclamation)
+        messageGroup.append("text")
+            .attr("x", centerX)
+            .attr("y", centerY - 30)
+            .attr("text-anchor", "middle")
+            .attr("font-size", "40px")
+            .attr("fill", "#ff9800")
+            .text("⚠");
+        
+        // Use foreignObject for proper text wrapping
+        var fo = messageGroup.append("foreignObject")
+            .attr("x", centerX - 230)
+            .attr("y", centerY - 5)
+            .attr("width", 460)
+            .attr("height", 80);
+        
+        var div = fo.append("xhtml:div")
+            .style("width", "100%")
+            .style("height", "100%")
+            .style("display", "flex")
+            .style("flex-direction", "column")
+            .style("align-items", "center")
+            .style("justify-content", "center")
+            .style("text-align", "center")
+            .style("padding", "5px");
+        
+        // Add main message with word wrap
+        div.append("xhtml:div")
+            .style("font-size", "16px")
+            .style("font-weight", "bold")
+            .style("color", "#856404")
+            .style("margin-bottom", "8px")
+            .style("word-wrap", "break-word")
+            .text(message);
+        
+        // Add instruction with word wrap
+        div.append("xhtml:div")
+            .style("font-size", "12px")
+            .style("color", "#856404")
+            .style("word-wrap", "break-word")
+            .text("Adjust the persistence slider to a lower value");
+    }
+    
+    clearEmptySpineMessage() {
+        this.svg.select("#emptySpineMessage").remove();
+    }
+
     drawSpine() {
         // console.log("scale = ", this.scale());
+        // Clear any empty spine message when drawing
+        this.clearEmptySpineMessage();
         this.svg.select("#topospine").remove();
         var svgContainer = this.svg.append("g").attr("id", "topospine");
         // var contours = this.data['contourPath'];

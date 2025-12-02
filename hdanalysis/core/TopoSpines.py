@@ -295,8 +295,9 @@ class TopoSpines:
         # If there are no nodes (e.g. empty graph or extrema set), avoid calling max()
         if len(maxContours) == 0:
             print("TopoSpines.generateSpine: no nodes found (empty extremaSet/graph).")
-            # safe default to avoid division-by-zero or scale-to-zero later
-            self.maxContourSize = 1.0
+            # Return empty spine structure immediately to avoid KeyError
+            spine['contour'] = {}
+            return spine
         else:
             self.maxContourSize = max(maxContours)
         # print "maxContourSize:", self.maxContourSize
@@ -399,6 +400,15 @@ class TopoSpines:
         # f = self.data.asArray()
 
         spine = self.generateSpine(contour_count, **kwords)
+
+        # Check if spine has no nodes (empty due to high persistence)
+        if len(spine['nodes']) == 0:
+            print("TopoSpines.jsonSpine: Empty spine detected (no nodes). Persistence may be too high.")
+            error_json = "{\n"
+            error_json += "\t\"error\": \"EMPTY_SPINE\",\n"
+            error_json += "\t\"message\": \"Persistence is too high\"\n"
+            error_json += "}\n"
+            return error_json
 
         json = "{\n"
         json += "\t\"fname\":\""+self.fname+"\",\n"
@@ -644,31 +654,55 @@ class TopoSpines:
         connection_path, saddleDir  = self.generateQuadConnectingCircles(node1['pos'],
             node2['pos'], radius1, radius2, node1['id'], node2['id'], funcValue)
 
-        cpr.AddPath(connection_path, pyclipper.PT_SUBJECT, True)
+        try:
+            cpr.AddPath(connection_path, pyclipper.PT_SUBJECT, True)
+        except Exception as e:
+            print(f"Warning: Could not add connection path for funcValue={funcValue}: {e}")
 
-        if radius1 != 0:
+        if radius1 > 0.0001:  # Only add if radius is meaningful
             circle1_path = self.generatePolygonCirclePath(node1['pos'], radius1, node1['id'], funcValue)
-            cpr.AddPath(circle1_path, pyclipper.PT_SUBJECT, True)
-        if radius2 !=0:
+            if len(circle1_path) >= 3:
+                try:
+                    cpr.AddPath(circle1_path, pyclipper.PT_SUBJECT, True)
+                except Exception as e:
+                    print(f"Warning: Could not add circle1 path for funcValue={funcValue}: {e}")
+                    
+        if radius2 > 0.0001:  # Only add if radius is meaningful
             #need to pass extrema index even though this is a saddle
             circle2_path = self.generatePolygonCirclePath(node2['pos'], radius2, node1['id'], funcValue)
-            cpr.AddPath(circle2_path, pyclipper.PT_SUBJECT, True)
+            if len(circle2_path) >= 3:
+                try:
+                    cpr.AddPath(circle2_path, pyclipper.PT_SUBJECT, True)
+                except Exception as e:
+                    print(f"Warning: Could not add circle2 path for funcValue={funcValue}: {e}")
             #compute half circle
             halfCircle2_path = self.generateHalfCircle(node2['pos'], radius2, saddleDir, node1['pos'], funcValue)
 
         self.storePerExtremaContour([self.tesselateQuad(connection_path), circle1_path, halfCircle2_path], node1, funcValue)
 
     def buildPeakContour(self, funcValue, node, radius):
+        # Skip if radius is too small to generate valid contours
+        if radius <= 0 or radius < 0.0001:
+            return
+            
         if funcValue not in self.contours.keys():
             # print "contourKeys:", self.contours.keys(), "fValue:", funcValue
             self.contours[float(funcValue)] = pyclipper.Pyclipper()
 
         cpr = self.contours[float(funcValue)]
         circle_path = self.generatePolygonCirclePath(node['pos'], radius, node['id'], funcValue)
+        
+        # Validate path before adding - must have at least 3 points
+        if len(circle_path) < 3:
+            return
+            
         # print circle_path
-        cpr.AddPath(circle_path, pyclipper.PT_SUBJECT, True)
-
-        self.storePerExtremaContour([circle_path], node, funcValue)
+        try:
+            cpr.AddPath(circle_path, pyclipper.PT_SUBJECT, True)
+            self.storePerExtremaContour([circle_path], node, funcValue)
+        except Exception as e:
+            print(f"Warning: Could not add peak contour path for funcValue={funcValue}, radius={radius}: {e}")
+            return
 
 
     ###################### overlap coloring ######################

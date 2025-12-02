@@ -79,6 +79,14 @@ class topospineComponent extends baseComponent {
   parseFunctionReturn(msg) {
     if (msg['function'] === "computeTopoSpineJSON") {
       var spineData = JSON.parse(msg['data']);
+      
+      // Check if spine is empty (persistence too high)
+      if (spineData.error === "EMPTY_SPINE") {
+        console.log("Empty spine detected:", spineData.message);
+        this.topoPlot.showEmptySpineMessage(spineData.message);
+        return;
+      }
+      
       this.topoPlot.setData(spineData);
       // If new scale is different from intial scale, need to regenerate spine data
       if (this.topoPlot.checkScale()) {
@@ -93,6 +101,14 @@ class topospineComponent extends baseComponent {
 
     } else if (msg['function'] === "computeSelectionSpineJSON") {
       var spineData = JSON.parse(msg['data']);
+      
+      // Check if spine is empty (persistence too high)
+      if (spineData.error === "EMPTY_SPINE") {
+        console.log("Empty spine detected:", spineData.message);
+        this.topoPlot.showEmptySpineMessage(spineData.message);
+        return;
+      }
+      
       if (spineData !== "") {
         // console.log("SPINEData", spineData);
         this.topoPlot.setData(spineData);
