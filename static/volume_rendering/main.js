@@ -9,10 +9,10 @@ import { TransferFunctionEditor } from './transferFunction.js';
 export class VolumeRenderingApp {
     constructor(canvas = null) {
         this.canvas = canvas || document.getElementById('volRenderCanvas');
-        this.gl = this.canvas.getContext('webgl') || this.canvas.getContext('experimental-webgl');
+        this.gl = this.canvas.getContext('webgl2');
 
         if (!this.gl) {
-            alert('WebGL not supported');
+            alert('WebGL2 not supported. Please use a modern browser.');
             return;
         }
 

@@ -42,13 +42,15 @@ export class TransferFunctionEditor {
 
     initTextures() {
         const gl = this.gl;
+        
         this.colorTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.colorTexture);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, COLOR_SAMPLES, 1, 0,
+        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, COLOR_SAMPLES, 1, 0,
             gl.RGBA, gl.UNSIGNED_BYTE, null);
 
         this.opacityTexture = gl.createTexture();
@@ -57,8 +59,9 @@ export class TransferFunctionEditor {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, COLOR_SAMPLES, 1, 0,
-            gl.LUMINANCE, gl.UNSIGNED_BYTE, null);
+        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, COLOR_SAMPLES, 1, 0,
+            gl.RED, gl.UNSIGNED_BYTE, null);
     }
 
     attachEvents() {
@@ -208,6 +211,7 @@ export class TransferFunctionEditor {
 
     updateTextures() {
         const gl = this.gl;
+        
         const colorData = new Uint8Array(COLOR_SAMPLES * 4);
         const opacityData = new Uint8Array(COLOR_SAMPLES);
 
@@ -228,7 +232,7 @@ export class TransferFunctionEditor {
 
         gl.bindTexture(gl.TEXTURE_2D, this.opacityTexture);
         gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, COLOR_SAMPLES, 1,
-            gl.LUMINANCE, gl.UNSIGNED_BYTE, opacityData);
+            gl.RED, gl.UNSIGNED_BYTE, opacityData);
 
         this.draw();
         this.notify();

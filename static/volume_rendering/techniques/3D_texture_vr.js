@@ -6,6 +6,7 @@ export class Texture3DVolumeRenderer {
     constructor(gl, volume) {
         this.gl = gl;
         this.volume = volume;
+        
         this.program = null;
         this.volumeTexture = null;
         this.sliceVAO = null;
@@ -20,10 +21,6 @@ export class Texture3DVolumeRenderer {
 
         this.colorTexture = null;
         this.opacityTexture = null;
-        this.slicesPerRow = 1;
-        this.slicesPerCol = 1;
-        this.sliceSize = { x: 1, y: 1 };
-        this.texelSize = { x: 1, y: 1 };
 
         this.init();
     }
@@ -31,14 +28,16 @@ export class Texture3DVolumeRenderer {
     init() {
         const gl = this.gl;
 
-        const vs = createShader(gl, gl.VERTEX_SHADER, Shaders.texture3D.vertex);
-        const fs = createShader(gl, gl.FRAGMENT_SHADER, Shaders.texture3D.fragment);
+        const shaderSource = Shaders.texture3DWebGL2;
+        
+        const vs = createShader(gl, gl.VERTEX_SHADER, shaderSource.vertex);
+        const fs = createShader(gl, gl.FRAGMENT_SHADER, shaderSource.fragment);
         this.program = createProgram(gl, vs, fs);
 
         this.createVolumeTexture();
         this.sliceVAO = { buffer: gl.createBuffer() };
 
-        console.log('3D Texture Volume Renderer initialized');
+        console.log('3D Texture Volume Renderer initialized (WebGL2)');
     }
 
     createVolumeTexture() {
@@ -46,45 +45,32 @@ export class Texture3DVolumeRenderer {
         const { data, width, height, depth } = this.volume;
 
         const texture = gl.createTexture();
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_3D, texture);
 
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-        const slicesPerRow = Math.ceil(Math.sqrt(depth));
-        const slicesPerCol = Math.ceil(depth / slicesPerRow);
-        const packedWidth = width * slicesPerRow;
-        const packedHeight = height * slicesPerCol;
-        const packedData = new Uint8Array(packedWidth * packedHeight);
-
-        for (let z = 0; z < depth; z++) {
-            const sliceRow = Math.floor(z / slicesPerRow);
-            const sliceCol = z % slicesPerRow;
-
-            for (let y = 0; y < height; y++) {
-                for (let x = 0; x < width; x++) {
-                    const srcIdx = z * width * height + y * width + x;
-                    const dstX = sliceCol * width + x;
-                    const dstY = sliceRow * height + y;
-                    const dstIdx = dstY * packedWidth + dstX;
-                    packedData[dstIdx] = data[srcIdx];
-                }
-            }
-        }
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_3D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
         gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, packedWidth, packedHeight, 0,
-            gl.LUMINANCE, gl.UNSIGNED_BYTE, packedData);
+        gl.texImage3D(
+            gl.TEXTURE_3D,
+            0,                  // level
+            gl.R8,              // internal format
+            width,
+            height,
+            depth,
+            0,                  // border
+            gl.RED,             // format
+            gl.UNSIGNED_BYTE,   // type
+            data
+        );
 
         this.volumeTexture = texture;
-        this.slicesPerRow = slicesPerRow;
-        this.slicesPerCol = slicesPerCol;
-        this.sliceSize = { x: 1 / slicesPerRow, y: 1 / slicesPerCol };
-        this.texelSize = { x: 1 / packedWidth, y: 1 / packedHeight };
+        this.textureTarget = gl.TEXTURE_3D;
 
-        console.log(`Created 3D volume texture (packed as ${packedWidth}x${packedHeight}, ${slicesPerRow}x${slicesPerCol} grid)`);
+        console.log(`Created true 3D texture: ${width}x${height}x${depth}`);
     }
 
     updateTransferFunction(colorTexture, opacityTexture) {
@@ -214,21 +200,13 @@ export class Texture3DVolumeRenderer {
         const alphaPerSlice = this.opacityMultiplier / Math.sqrt(this.numSlices);
         gl.uniform1f(gl.getUniformLocation(this.program, 'uAlphaScale'), alphaPerSlice);
         gl.uniform1f(gl.getUniformLocation(this.program, 'uBrightness'), this.brightness);
-        gl.uniform3f(gl.getUniformLocation(this.program, 'uDimensions'),
-            this.volume.width, this.volume.height, this.volume.depth);
-        gl.uniform1f(gl.getUniformLocation(this.program, 'uSlicesPerRow'), this.slicesPerRow);
-        gl.uniform1f(gl.getUniformLocation(this.program, 'uSlicesPerCol'), this.slicesPerCol);
-        gl.uniform2f(gl.getUniformLocation(this.program, 'uSliceSize'),
-            this.sliceSize.x, this.sliceSize.y);
-        gl.uniform2f(gl.getUniformLocation(this.program, 'uTexelSize'),
-            this.texelSize.x, this.texelSize.y);
 
         gl.uniform1i(gl.getUniformLocation(this.program, 'uVolume'), 0);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uColormap'), 1);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uOpacitymap'), 2);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, this.volumeTexture);
+        gl.bindTexture(this.textureTarget, this.volumeTexture);
 
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, this.colorTexture);

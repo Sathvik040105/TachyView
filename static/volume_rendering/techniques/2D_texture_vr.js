@@ -25,8 +25,8 @@ export class Texture2DVolumeRenderer {
     init() {
         const gl = this.gl;
 
-        const vs = createShader(gl, gl.VERTEX_SHADER, Shaders.texture2D.vertex);
-        const fs = createShader(gl, gl.FRAGMENT_SHADER, Shaders.texture2D.fragment);
+        const vs = createShader(gl, gl.VERTEX_SHADER, Shaders.texture2DWebGL2.vertex);
+        const fs = createShader(gl, gl.FRAGMENT_SHADER, Shaders.texture2DWebGL2.fragment);
         this.program = createProgram(gl, vs, fs);
 
         this.createTextureSlices();
@@ -55,8 +55,8 @@ export class Texture2DVolumeRenderer {
             }
 
             gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, width, height, 0,
-                gl.LUMINANCE, gl.UNSIGNED_BYTE, sliceData);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, width, height, 0,
+                gl.RED, gl.UNSIGNED_BYTE, sliceData);
 
             this.textureSlices.push(texture);
         }
