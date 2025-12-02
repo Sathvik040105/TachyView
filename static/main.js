@@ -9,7 +9,8 @@ var constructorMap = {
   filterComponent: filterComponent,
   hdfileComponent: hdfileComponent,
   topospineComponent: topospineComponent,
-  volumeRenderingComponent: volumeRenderingComponent
+  volumeRenderingComponent: volumeRenderingComponent,
+  landscapeComponent: landscapeComponent
 };
 
 //for generating dragable side panel
@@ -17,7 +18,8 @@ var panelMetaInfo = {
   'Filtering': ['filter_view', 'filterComponent'],
   'HDFile': ['hdfile_view', 'hdfileComponent'],
   'Topological Spine': ['template_view', 'topospineComponent'],
-  'Volume Rendering': ['volume_rendering_view', 'volumeRenderingComponent']
+  'Volume Rendering': ['volume_rendering_view', 'volumeRenderingComponent'],
+  'Topological Landscape': ['landscape_view', 'landscapeComponent']
 };
 
 function registerComponent(appLayout, name) {

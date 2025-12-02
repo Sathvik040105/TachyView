@@ -6,7 +6,7 @@ class persistencePlot {
     this._size = size;
     this._id = id;
     this._maxExtremaCount = 5000;
-    this.isShowVariation = false;
+    this.isShowVariation = true;
   }
 
   setComputeSpineCallback(computeTopoSpine) {
@@ -155,12 +155,24 @@ class persistencePlot {
         'none').attr(
         "stroke", "blue").attr("stroke-width", 2).attr(
         "opacity", 0.5);
+      this.svg.append('text')
+        .attr('x', this._size[0] - 20)
+        .attr('y', 10)
+        .attr('fill', 'blue')
+        .attr('font-size', '10px')
+        .text('Persistence');
       if (this.isShowVariation) {
         this.svg.append('path').attr('d', line(this.variation)).attr(
           'fill',
           'none').attr(
           "stroke", "red").attr("stroke-width", 2).attr("opacity",
           0.5);
+        this.svg.append('text')
+          .attr('x', this._size[0] - 20)
+          .attr('y', 22)
+          .attr('fill', 'red')
+          .attr('font-size', '10px')
+          .text('Variation');
       }
 
       //draw arrow control

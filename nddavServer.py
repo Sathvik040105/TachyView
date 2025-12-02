@@ -24,6 +24,7 @@ import argparse
 defalutLayout = {
     "column": [
         {"row": ["Topological Spine", "Volume Rendering"]},
+        {"row": ["Topological Landscape"]}
     ]
 }
 

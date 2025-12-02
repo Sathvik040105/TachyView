@@ -84,10 +84,12 @@ class topospineComponent extends baseComponent {
       if (spineData.error === "EMPTY_SPINE") {
         console.log("Empty spine detected:", spineData.message);
         this.topoPlot.showEmptySpineMessage(spineData.message);
+        window.dispatchEvent(new CustomEvent('topologicalSpineData', { detail: null }));
         return;
       }
       
       this.topoPlot.setData(spineData);
+      window.dispatchEvent(new CustomEvent('topologicalSpineData', { detail: spineData }));
       // If new scale is different from intial scale, need to regenerate spine data
       if (this.topoPlot.checkScale()) {
 
@@ -106,12 +108,14 @@ class topospineComponent extends baseComponent {
       if (spineData.error === "EMPTY_SPINE") {
         console.log("Empty spine detected:", spineData.message);
         this.topoPlot.showEmptySpineMessage(spineData.message);
+        window.dispatchEvent(new CustomEvent('topologicalSpineData', { detail: null }));
         return;
       }
       
       if (spineData !== "") {
         // console.log("SPINEData", spineData);
         this.topoPlot.setData(spineData);
+        window.dispatchEvent(new CustomEvent('topologicalSpineData', { detail: spineData }));
       }
     }
   }

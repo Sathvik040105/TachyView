@@ -50,7 +50,8 @@ class nddav:
             'template_view': app.send_static_file('viewTemplates/template_view.mst'),
             'filter_view': app.send_static_file('viewTemplates/filter_view.mst'),
             'hdfile_view': app.send_static_file('viewTemplates/hdfile_view.mst'),
-            'volume_rendering_view': app.send_static_file('viewTemplates/volume_rendering_view.mst')
+            'volume_rendering_view': app.send_static_file('viewTemplates/volume_rendering_view.mst'),
+            'landscape_view': app.send_static_file('viewTemplates/landscape_view.mst')
         }.get(name)
 
     @app.route('/upload', methods=['POST','GET'])
