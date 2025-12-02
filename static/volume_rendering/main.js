@@ -200,7 +200,7 @@ export class VolumeRenderingApp {
         this.gl.enable(this.gl.DEPTH_TEST);
 
         this.switchTechnique(this.currentTechnique);
-        this.boundingBox = new BoundingBox(this.gl);
+        this.boundingBox = new BoundingBox(this.gl, this.volume);
 
         document.getElementById('loading').style.display = 'none';
     }

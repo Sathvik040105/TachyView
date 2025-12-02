@@ -3,10 +3,11 @@ import { createShader, createProgram } from './utils.js';
 import { Shaders } from './shaders.js';
 
 export class BoundingBox {
-    constructor(gl) {
+    constructor(gl, volume = null) {
         this.gl = gl;
         this.program = null;
         this.vao = null;
+        this.volume = volume;
         
         this.rotationX = 0;
         this.rotationY = 0;
@@ -61,12 +62,15 @@ export class BoundingBox {
         
         gl.useProgram(this.program);
         
-        // Set MVP matrix
-        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom);
+        // Set MVP matrix with scale factors
+        const scaleX = this.volume ? this.volume.scaleX : 1.0;
+        const scaleY = this.volume ? this.volume.scaleY : 1.0;
+        const scaleZ = this.volume ? this.volume.scaleZ : 1.0;
+        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom, scaleX, scaleY, scaleZ);
         const mvpLoc = gl.getUniformLocation(this.program, 'uMVP');
         gl.uniformMatrix4fv(mvpLoc, false, mvp);
         
-        // Set color (yellow)
+        // Set color (black)
         const colorLoc = gl.getUniformLocation(this.program, 'uColor');
         gl.uniform3f(colorLoc, 0.0, 0.0, 0.0);
         

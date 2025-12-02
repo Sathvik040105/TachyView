@@ -74,20 +74,34 @@ export class Matrix4 {
     }
 
     /**
+     * Create scale matrix
+     */
+    static scale(x, y, z) {
+        return new Float32Array([
+            x, 0, 0, 0,
+            0, y, 0, 0,
+            0, 0, z, 0,
+            0, 0, 0, 1
+        ]);
+    }
+
+    /**
      * Create Model-View-Projection matrix
      */
-    static createMVP(windowWidth, windowHeight, rotationX, rotationY, zoom) {
+    static createMVP(windowWidth, windowHeight, rotationX, rotationY, zoom, scaleX = 1.0, scaleY = 1.0, scaleZ = 1.0) {
         const aspect = windowWidth / windowHeight;
         const fov = 45 * Math.PI / 180;
         const projection = Matrix4.perspective(fov, aspect, 0.1, 100);
         
+        const scale = Matrix4.scale(scaleX, scaleY, scaleZ);
         const rotX = Matrix4.rotationX(rotationX);
         const rotY = Matrix4.rotationY(rotationY);
         const translate = Matrix4.translation(0, 0, -zoom);
         
         const temp1 = Matrix4.multiply(rotX, rotY);
-        const temp2 = Matrix4.multiply(translate, temp1);
-        return Matrix4.multiply(projection, temp2);
+        const temp2 = Matrix4.multiply(temp1, scale);
+        const temp3 = Matrix4.multiply(translate, temp2);
+        return Matrix4.multiply(projection, temp3);
     }
 }
 

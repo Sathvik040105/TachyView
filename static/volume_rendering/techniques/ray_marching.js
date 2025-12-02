@@ -154,7 +154,8 @@ export class RayMarchingRenderer {
         if (!this.colorTexture || !this.opacityTexture) return;
 
         const gl = this.gl;
-        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom);
+        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom,
+            this.volume.scaleX, this.volume.scaleY, this.volume.scaleZ);
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
         gl.viewport(0, 0, width, height);

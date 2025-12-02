@@ -19,7 +19,13 @@ export class VolumeLoader {
             spacingZ: 1.0,
             originX: 0.0,
             originY: 0.0,
-            originZ: 0.0
+            originZ: 0.0,
+            physicalWidth: 0.0,
+            physicalHeight: 0.0,
+            physicalDepth: 0.0,
+            scaleX: 1.0,
+            scaleY: 1.0,
+            scaleZ: 1.0
         };
         
         // Parse DIMENSIONS
@@ -68,34 +74,58 @@ export class VolumeLoader {
             throw new Error('Could not find data in VTK file');
         }
         
-        // Read scalar data
+        // Read scalar data (as floats first)
         const totalPoints = volume.width * volume.height * volume.depth;
-        volume.data = new Uint8Array(totalPoints);
+        const rawData = [];
         
         let count = 0;
         for (let i = dataStartIdx; i < lines.length && count < totalPoints; i++) {
             const values = lines[i].trim().split(/\s+/);
             for (const val of values) {
                 if (val && count < totalPoints) {
-                    let v = parseInt(val);
-                    v = Math.max(0, Math.min(255, v));
-                    volume.data[count++] = v;
+                    rawData.push(parseFloat(val));
+                    count++;
                 }
             }
         }
         
-        // Calculate data range
-        let min = 255, max = 0;
-        for (let i = 0; i < volume.data.length; i++) {
-            min = Math.min(min, volume.data[i]);
-            max = Math.max(max, volume.data[i]);
+        // Find min/max of raw data
+        let minVal = Infinity, maxVal = -Infinity;
+        for (let i = 0; i < rawData.length; i++) {
+            minVal = Math.min(minVal, rawData[i]);
+            maxVal = Math.max(maxVal, rawData[i]);
         }
-        volume.minValue = min;
-        volume.maxValue = max;
+        
+        // Normalize to 0-255 range
+        volume.data = new Uint8Array(totalPoints);
+        const range = maxVal - minVal;
+        if (range > 0) {
+            for (let i = 0; i < rawData.length; i++) {
+                const normalized = (rawData[i] - minVal) / range;
+                volume.data[i] = Math.floor(normalized * 255);
+            }
+        }
+        
+        volume.minValue = 0;
+        volume.maxValue = 255;
+        
+        // Calculate physical dimensions
+        volume.physicalWidth = volume.width * volume.spacingX;
+        volume.physicalHeight = volume.height * volume.spacingY;
+        volume.physicalDepth = volume.depth * volume.spacingZ;
+        
+        // Calculate scale factors to normalize the largest dimension to 1.0
+        const maxDim = Math.max(volume.physicalWidth, volume.physicalHeight, volume.physicalDepth);
+        volume.scaleX = volume.physicalWidth / maxDim;
+        volume.scaleY = volume.physicalHeight / maxDim;
+        volume.scaleZ = volume.physicalDepth / maxDim;
         
         console.log(`Loaded volume: ${volume.width}x${volume.height}x${volume.depth}`);
         console.log(`Spacing: ${volume.spacingX}, ${volume.spacingY}, ${volume.spacingZ}`);
-        console.log(`Range: ${min}-${max}`);
+        console.log(`Physical dimensions: ${volume.physicalWidth.toFixed(2)} x ${volume.physicalHeight.toFixed(2)} x ${volume.physicalDepth.toFixed(2)}`);
+        console.log(`Scale factors: ${volume.scaleX.toFixed(3)}, ${volume.scaleY.toFixed(3)}, ${volume.scaleZ.toFixed(3)}`);
+        console.log(`Raw data range: ${minVal.toFixed(6)} - ${maxVal.toFixed(6)}`);
+        console.log(`Normalized range: ${volume.minValue} - ${volume.maxValue}`);
         
         return volume;
     }

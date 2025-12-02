@@ -184,7 +184,8 @@ export class Texture3DVolumeRenderer {
 
         gl.useProgram(this.program);
 
-        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom);
+        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom,
+            this.volume.scaleX, this.volume.scaleY, this.volume.scaleZ);
         gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uMVP'), false, mvp);
 
         const viewDir = computeViewDirection(this.rotationX, this.rotationY);

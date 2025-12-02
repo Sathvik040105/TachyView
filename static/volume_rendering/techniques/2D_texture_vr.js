@@ -99,7 +99,8 @@ export class Texture2DVolumeRenderer {
 
         gl.useProgram(this.program);
 
-        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom);
+        const mvp = Matrix4.createMVP(width, height, this.rotationX, this.rotationY, this.zoom, 
+            this.volume.scaleX, this.volume.scaleY, this.volume.scaleZ);
         gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uMVP'), false, mvp);
 
         gl.uniform1f(gl.getUniformLocation(this.program, 'uAlpha'), this.alpha);
