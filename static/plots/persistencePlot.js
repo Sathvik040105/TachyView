@@ -6,7 +6,7 @@ class persistencePlot {
     this._size = size;
     this._id = id;
     this._maxExtremaCount = 5000;
-    this.isShowVariation = true;
+    this.isShowVariation = false;
   }
 
   setComputeSpineCallback(computeTopoSpine) {
