@@ -14,7 +14,6 @@ export class Texture2DVolumeRenderer {
         this.rotationY = 0;
         this.zoom = 2.5;
         this.alpha = 0.8;
-        this.brightness = 1.0;
 
         this.colorTexture = null;
         this.opacityTexture = null;
@@ -104,7 +103,6 @@ export class Texture2DVolumeRenderer {
         gl.uniformMatrix4fv(gl.getUniformLocation(this.program, 'uMVP'), false, mvp);
 
         gl.uniform1f(gl.getUniformLocation(this.program, 'uAlpha'), this.alpha);
-        gl.uniform1f(gl.getUniformLocation(this.program, 'uBrightness'), this.brightness);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uTexture'), 0);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uColormap'), 1);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uOpacitymap'), 2);

@@ -15,7 +15,6 @@ export class Texture3DVolumeRenderer {
         this.rotationY = 0;
         this.zoom = 2.5;
         this.alpha = 0.8;
-        this.brightness = 1.0;
         this.numSlices = 128;
         this.opacityMultiplier = 5.0;
 
@@ -200,7 +199,6 @@ export class Texture3DVolumeRenderer {
 
         const alphaPerSlice = this.opacityMultiplier / Math.sqrt(this.numSlices);
         gl.uniform1f(gl.getUniformLocation(this.program, 'uAlphaScale'), alphaPerSlice);
-        gl.uniform1f(gl.getUniformLocation(this.program, 'uBrightness'), this.brightness);
 
         gl.uniform1i(gl.getUniformLocation(this.program, 'uVolume'), 0);
         gl.uniform1i(gl.getUniformLocation(this.program, 'uColormap'), 1);

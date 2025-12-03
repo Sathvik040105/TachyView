@@ -17,7 +17,6 @@ export class RayMarchingRenderer {
         this.rotationX = 0;
         this.rotationY = 0;
         this.zoom = 2.5;
-        this.brightness = 1.0;
         this.stepSize = 0.005;
 
         this.colorTexture = null;
@@ -190,7 +189,6 @@ export class RayMarchingRenderer {
         gl.uniformMatrix4fv(gl.getUniformLocation(this.raycastProgram, 'uMVP'), false, mvp);
         gl.uniform2f(gl.getUniformLocation(this.raycastProgram, 'uScreenSize'), width, height);
         gl.uniform1f(gl.getUniformLocation(this.raycastProgram, 'uStepSize'), this.stepSize);
-        gl.uniform1f(gl.getUniformLocation(this.raycastProgram, 'uBrightness'), this.brightness);
 
         gl.uniform1i(gl.getUniformLocation(this.raycastProgram, 'uVolume'), 0);
         gl.uniform1i(gl.getUniformLocation(this.raycastProgram, 'uBackFace'), 1);

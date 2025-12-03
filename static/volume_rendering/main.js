@@ -93,14 +93,6 @@ export class VolumeRenderingApp {
             }
         });
 
-        const brightnessSlider = document.getElementById('brightness');
-        brightnessSlider.addEventListener('input', (e) => {
-            document.getElementById('brightness-value').textContent = e.target.value;
-            if (this.renderer) {
-                this.renderer.brightness = parseFloat(e.target.value);
-            }
-        });
-
         document.getElementById('reset-view').addEventListener('click', () => this.resetView());
     }
 
@@ -222,8 +214,7 @@ export class VolumeRenderingApp {
         const oldSettings = this.renderer ? {
             rotationX: this.renderer.rotationX,
             rotationY: this.renderer.rotationY,
-            zoom: this.renderer.zoom,
-            brightness: this.renderer.brightness
+            zoom: this.renderer.zoom
         } : null;
 
         if (this.renderer) {

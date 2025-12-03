@@ -27,13 +27,12 @@ export const Shaders = {
             uniform sampler2D uColormap;
             uniform sampler2D uOpacitymap;
             uniform float uAlpha;
-            uniform float uBrightness;
 
             void main() {
                 float intensity = texture(uTexture, vTexCoord).r;
                 intensity = clamp(intensity, 0.0, 1.0);
 
-                vec3 color = texture(uColormap, vec2(intensity, 0.5)).rgb * uBrightness;
+                vec3 color = texture(uColormap, vec2(intensity, 0.5)).rgb;
                 float opacity = texture(uOpacitymap, vec2(intensity, 0.5)).r * uAlpha;
 
                 FragColor = vec4(color * opacity, opacity);
@@ -67,14 +66,13 @@ export const Shaders = {
             uniform sampler2D uColormap;
             uniform sampler2D uOpacitymap;
             uniform float uAlphaScale;
-            uniform float uBrightness;
 
             void main() {
                 // Hardware trilinear interpolation
                 float intensity = texture(uVolume, vTexCoord).r;
                 intensity = clamp(intensity, 0.0, 1.0);
 
-                vec3 color = texture(uColormap, vec2(intensity, 0.5)).rgb * uBrightness;
+                vec3 color = texture(uColormap, vec2(intensity, 0.5)).rgb;
                 float opacity = texture(uOpacitymap, vec2(intensity, 0.5)).r * uAlphaScale;
 
                 // Premultiplied alpha
@@ -136,7 +134,6 @@ export const Shaders = {
             uniform sampler2D uOpacitymap;
             uniform vec2 uScreenSize;
             uniform float uStepSize;
-            uniform float uBrightness;
 
             void main() {
                 vec2 screenPos = gl_FragCoord.xy / uScreenSize;
@@ -173,7 +170,7 @@ export const Shaders = {
                         continue;
                     }
 
-                    float intensity = clamp(texture(uVolume, samplePos).r * uBrightness, 0.0, 1.0);
+                    float intensity = texture(uVolume, samplePos).r;
 
                     vec3 color = texture(uColormap, vec2(intensity, 0.5)).rgb;
                     float opacity = texture(uOpacitymap, vec2(intensity, 0.5)).r;
