@@ -31,6 +31,19 @@ class landscapeComponent extends baseComponent {
       return;
     }
 
+    // Wire up surface toggle button
+    const toggleBtn = document.querySelector(this.div + ' #toggle-surface');
+    let surfaceOn = true;
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', () => {
+        surfaceOn = !surfaceOn;
+        toggleBtn.textContent = `Surface: ${surfaceOn ? 'On' : 'Off'}`;
+        if (this.landscapeApp && this.landscapeApp.setShowSurface) {
+          this.landscapeApp.setShowSurface(surfaceOn);
+        }
+      });
+    }
+
     this.landscapeApp = new LandscapeApp(canvas);
     console.log('LandscapeApp initialized');
 
