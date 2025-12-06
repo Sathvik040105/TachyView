@@ -25,7 +25,9 @@ export class VolumeLoader {
             physicalDepth: 0.0,
             scaleX: 1.0,
             scaleY: 1.0,
-            scaleZ: 1.0
+            scaleZ: 1.0,
+            rawMin: null,
+            rawMax: null
         };
         
         // Parse DIMENSIONS
@@ -95,6 +97,9 @@ export class VolumeLoader {
             minVal = Math.min(minVal, rawData[i]);
             maxVal = Math.max(maxVal, rawData[i]);
         }
+
+        volume.rawMin = minVal;
+        volume.rawMax = maxVal;
         
         // Normalize to 0-255 range
         volume.data = new Uint8Array(totalPoints);
@@ -106,8 +111,8 @@ export class VolumeLoader {
             }
         }
         
-        volume.minValue = 0;
-        volume.maxValue = 255;
+        volume.minValue = minVal;
+        volume.maxValue = maxVal;
         
         // Calculate physical dimensions
         volume.physicalWidth = volume.width * volume.spacingX;
@@ -125,7 +130,7 @@ export class VolumeLoader {
         console.log(`Physical dimensions: ${volume.physicalWidth.toFixed(2)} x ${volume.physicalHeight.toFixed(2)} x ${volume.physicalDepth.toFixed(2)}`);
         console.log(`Scale factors: ${volume.scaleX.toFixed(3)}, ${volume.scaleY.toFixed(3)}, ${volume.scaleZ.toFixed(3)}`);
         console.log(`Raw data range: ${minVal.toFixed(6)} - ${maxVal.toFixed(6)}`);
-        console.log(`Normalized range: ${volume.minValue} - ${volume.maxValue}`);
+        console.log(`Normalized range: 0 - 255`);
         
         return volume;
     }

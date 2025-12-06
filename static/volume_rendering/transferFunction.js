@@ -33,6 +33,7 @@ export class TransferFunctionEditor {
         this.listeners = new Set();
 
         this.ctx = this.canvas.getContext('2d');
+        this.highlightWindow = null;
         this.initTextures();
         this.attachEvents();
         this.sortPoints();
@@ -214,11 +215,29 @@ export class TransferFunctionEditor {
         
         const colorData = new Uint8Array(COLOR_SAMPLES * 4);
         const opacityData = new Uint8Array(COLOR_SAMPLES);
+        const hw = this.highlightWindow;
+        const highlightColor = hw && hw.color ? hw.color : [1, 0.4, 0.1];
+        const highlightWidth = hw ? hw.width : 0;
 
         for (let i = 0; i < COLOR_SAMPLES; i++) {
             const iso = i / (COLOR_SAMPLES - 1);
-            const color = this.sampleColor(iso);
-            const opacity = this.sampleOpacity(iso);
+            let color = this.sampleColor(iso);
+            let opacity = this.sampleOpacity(iso);
+
+            if (hw) {
+                const dist = Math.abs(iso - hw.iso);
+                if (dist <= highlightWidth) {
+                    const t = 1 - dist / Math.max(highlightWidth, 1e-6);
+                    const blend = 0.65 * t;
+                    color = [
+                        color[0] * (1 - blend) + highlightColor[0] * blend,
+                        color[1] * (1 - blend) + highlightColor[1] * blend,
+                        color[2] * (1 - blend) + highlightColor[2] * blend,
+                    ];
+                    opacity = this.clamp(opacity + 0.35 * t, 0, 1);
+                }
+            }
+
             colorData[i * 4 + 0] = Math.round(this.clamp(color[0], 0, 1) * 255);
             colorData[i * 4 + 1] = Math.round(this.clamp(color[1], 0, 1) * 255);
             colorData[i * 4 + 2] = Math.round(this.clamp(color[2], 0, 1) * 255);
@@ -305,6 +324,20 @@ export class TransferFunctionEditor {
 
     notify() {
         for (const cb of this.listeners) cb();
+    }
+
+    setHighlightWindow(iso, width = 0.05, color = [1, 0.4, 0.1]) {
+        this.highlightWindow = {
+            iso: this.clamp(iso, 0, 1),
+            width: Math.max(width, 0.001),
+            color
+        };
+        this.updateTextures();
+    }
+
+    clearHighlightWindow() {
+        this.highlightWindow = null;
+        this.updateTextures();
     }
 
     onChange(callback) {

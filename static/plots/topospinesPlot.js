@@ -40,6 +40,10 @@ class topospinesPlot {
         this.pPlot.setComputeSpineCallback(this.computeSpine.bind(this));
 
         this.initScale = 1.0;
+
+        // Cache for neighbor lookups when broadcasting selections
+        this._nodeIndexMap = {};
+        this._adjacentIndices = {};
     }
 
     checkScale(){
@@ -50,10 +54,67 @@ class topospinesPlot {
         this.data = spines;
         // Clear any empty spine message when setting new valid data
         this.clearEmptySpineMessage();
+        this._buildAdjacency();
         this.updateDimSelector(this.data['rangeNames'], this.data['fname']);
         // console.log(this.data);
         this.resetZoom();
         this.draw();
+    }
+
+    _buildAdjacency() {
+        this._nodeIndexMap = {};
+        this._adjacentIndices = {};
+        if (!this.data || !this.data.nodes || !this.data.link) {
+            return;
+        }
+
+        this.data.nodes.forEach(n => {
+            this._nodeIndexMap[n.index] = n;
+            this._adjacentIndices[n.index] = new Set();
+        });
+
+        const addEdge = (a, b) => {
+            if (this._adjacentIndices[a]) this._adjacentIndices[a].add(b);
+            if (this._adjacentIndices[b]) this._adjacentIndices[b].add(a);
+        };
+
+        this.data.link.forEach(link => {
+            if (typeof link === 'string' && link.includes('-')) {
+                const [aStr, bStr] = link.split('-');
+                const a = Number(aStr);
+                const b = Number(bStr);
+                if (!isNaN(a) && !isNaN(b)) addEdge(a, b);
+            } else if (link && link.source !== undefined && link.target !== undefined) {
+                addEdge(Number(link.source), Number(link.target));
+            }
+        });
+    }
+
+    _broadcastSelection(node, type) {
+        if (!node) return;
+        const neighbors = Array.from(this._adjacentIndices[node.index] || []);
+        const neighborNodes = neighbors
+            .map(idx => this._nodeIndexMap[idx])
+            .filter(Boolean)
+            .map(n => ({
+                index: n.index,
+                position: Array.isArray(n.position) ? n.position.slice() : n.position,
+                functionValue: Number(n.functionValue),
+                type: n.type || null
+            }));
+
+        const detail = {
+            nodeType: type,
+            node: {
+                index: node.index,
+                position: Array.isArray(node.position) ? node.position.slice() : node.position,
+                functionValue: Number(node.functionValue),
+                type: node.type || null
+            },
+            neighbors: neighborNodes
+        };
+
+        window.dispatchEvent(new CustomEvent('topoNodeSelected', { detail }));
     }
 
     setPersistence(persistence, variation) {
@@ -630,6 +691,9 @@ class topospinesPlot {
             .attr("fill", d => colorMap(d.functionValue))
             .attr("stroke", "black")
             .attr("stroke-width", 2)
+            .on('click', d => {
+                this._broadcastSelection(d, 'saddle');
+            })
             .on("mouseover", d => {
                 div.transition()
                     .duration(200)
@@ -660,6 +724,7 @@ class topospinesPlot {
             .attr("fill", d => colorMap(d.functionValue))
             .attr("stroke", "black")
             .on('click', d => {
+                this._broadcastSelection(d, 'extrema');
                 if (this.selectExtrema)
                     this.selectExtrema(d.index);
             })

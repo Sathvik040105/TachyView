@@ -4,8 +4,11 @@ class landscapeComponent extends baseComponent {
     console.log('landscapeComponent initialized', uuid);
 
     this.pendingSpineData = null;
+    this.pendingSelectionHighlight = null;
     this._handleSpineData = this._handleSpineData.bind(this);
+    this._handleNodeSelection = this._handleNodeSelection.bind(this);
     window.addEventListener('topologicalSpineData', this._handleSpineData);
+    window.addEventListener('topoNodeSelected', this._handleNodeSelection);
 
     this._setupUI();
   }
@@ -33,6 +36,7 @@ class landscapeComponent extends baseComponent {
 
     // Wire up surface toggle button
     const toggleBtn = document.querySelector(this.div + ' #toggle-surface');
+    const clearBtn = document.querySelector(this.div + ' #landscape-clear-selection');
     let surfaceOn = true;
     if (toggleBtn) {
       toggleBtn.addEventListener('click', () => {
@@ -44,6 +48,16 @@ class landscapeComponent extends baseComponent {
       });
     }
 
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        if (this.landscapeApp && this.landscapeApp.applySelectionHighlight) {
+          this.landscapeApp.applySelectionHighlight(null, []);
+        } else {
+          this.pendingSelectionHighlight = { nodeIndex: null, neighbors: [] };
+        }
+      });
+    }
+
     this.landscapeApp = new LandscapeApp(canvas);
     console.log('LandscapeApp initialized');
 
@@ -51,6 +65,12 @@ class landscapeComponent extends baseComponent {
       console.log('Applying buffered spine data to landscape');
       this.landscapeApp.setData(this.pendingSpineData);
       this.pendingSpineData = null;
+    }
+
+    if (this.pendingSelectionHighlight) {
+      const { nodeIndex, neighbors } = this.pendingSelectionHighlight;
+      this.landscapeApp.applySelectionHighlight(nodeIndex, neighbors);
+      this.pendingSelectionHighlight = null;
     }
   }
 
@@ -65,6 +85,19 @@ class landscapeComponent extends baseComponent {
       this.landscapeApp.setData(spineData);
     } else {
       this.pendingSpineData = spineData;
+    }
+  }
+
+  _handleNodeSelection(event) {
+    const payload = event.detail;
+    if (!payload || !payload.node) return;
+    const nodeIndex = payload.node.index;
+    const neighbors = (payload.neighbors || []).map(n => n.index);
+
+    if (this.landscapeApp && this.landscapeApp.applySelectionHighlight) {
+      this.landscapeApp.applySelectionHighlight(nodeIndex, neighbors);
+    } else {
+      this.pendingSelectionHighlight = { nodeIndex, neighbors };
     }
   }
 

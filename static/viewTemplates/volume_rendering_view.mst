@@ -1,4 +1,7 @@
-<div id='{{id}}' style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;color:#333;">
+<div id='{{id}}' style="width:100%;height:100%;display:flex;flex-direction:column;background:#fff;color:#333;position:relative;">
+    <div style="position:absolute;top:8px;right:8px;z-index:10;display:flex;gap:6px;">
+        <button id="vr-clear-highlight" class="btn btn-xs btn-default" style="padding:4px 8px;">Clear Selection</button>
+    </div>
     <div style="flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#fff;">
         <canvas id="volRenderCanvas" style="width:100%;height:100%;display:block;background:#fff;"></canvas>
     </div>

@@ -22,6 +22,7 @@ export class VolumeRenderingApp {
         this.currentTechnique = '2d';
         this.fpsCounter = new FPSCounter();
         this.isAnimating = false;
+        this.pendingHighlightValue = null;
         this.transferFunction = new TransferFunctionEditor(this.gl, {
             canvasId: 'tf-canvas',
             colorInputId: 'tf-color',
@@ -152,6 +153,9 @@ export class VolumeRenderingApp {
             this.volume = await VolumeLoader.loadVTK(file);
             this.updateVolumeInfo();
             this.initRenderer();
+            if (this.pendingHighlightValue !== null) {
+                this.applyScalarHighlight(this.pendingHighlightValue);
+            }
             document.getElementById('loading').style.display = 'none';
             if (!this.isAnimating) {
                 this.isAnimating = true;
@@ -267,6 +271,47 @@ export class VolumeRenderingApp {
                 this.boundingBox.zoom = 2.5;
             }
         }
+    }
+
+    applyScalarHighlight(functionValue) {
+        if (functionValue === undefined || functionValue === null) return;
+
+        if (!this.volume) {
+            this.pendingHighlightValue = functionValue;
+            return;
+        }
+
+        const rawMin = Number.isFinite(this.volume.rawMin) ? this.volume.rawMin : (this.volume.minValue || 0);
+        const rawMax = Number.isFinite(this.volume.rawMax) ? this.volume.rawMax : (this.volume.maxValue || 1);
+        const range = Math.max(rawMax - rawMin, 1e-6);
+        const iso = this._clamp((functionValue - rawMin) / range, 0, 1);
+
+        this.transferFunction.setHighlightWindow(iso, 0.05, [1.0, 0.35, 0.05]);
+        this.pendingHighlightValue = null;
+
+        if (this.renderer && this.renderer.updateTransferFunction) {
+            this.renderer.updateTransferFunction(
+                this.transferFunction.getColorTexture(),
+                this.transferFunction.getOpacityTexture()
+            );
+        }
+    }
+
+    clearScalarHighlight() {
+        this.pendingHighlightValue = null;
+        if (this.transferFunction && this.transferFunction.clearHighlightWindow) {
+            this.transferFunction.clearHighlightWindow();
+        }
+        if (this.renderer && this.renderer.updateTransferFunction) {
+            this.renderer.updateTransferFunction(
+                this.transferFunction.getColorTexture(),
+                this.transferFunction.getOpacityTexture()
+            );
+        }
+    }
+
+    _clamp(v, min, max) {
+        return Math.min(Math.max(v, min), max);
     }
 
     animate() {

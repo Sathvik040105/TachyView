@@ -32,6 +32,15 @@ export class LandscapeApp {
             contourLineCount: 0
         };
 
+        // Selection + adjacency caches
+        this.nodeOrderMap = {};
+        this.linkPairs = [];
+        this.currentNodes = [];
+        this.selectedNodeIndex = null;
+        this.selectedNeighborIndices = [];
+        this.currentNodesNormalized = [];
+        this.surfaceVerticesNormalized = [];
+
         // Camera state
         this.camera = {
             rotationX: 30,
@@ -176,6 +185,16 @@ export class LandscapeApp {
         const contours = spineData.contourPath || {};
         const contourLevels = (spineData.contourValues || []).map(Number);
 
+        this.currentNodes = nodes;
+        this.nodeOrderMap = {};
+        nodes.forEach((node, idx) => {
+            if (node && node.index !== undefined) {
+                this.nodeOrderMap[node.index] = idx;
+            }
+        });
+        this.currentNodesNormalized = [];
+        this.surfaceVerticesNormalized = [];
+
         let minX = Infinity, maxX = -Infinity;
         let minY = Infinity, maxY = -Infinity;
         let minVal = Infinity, maxVal = -Infinity;
@@ -248,6 +267,7 @@ export class LandscapeApp {
         const surfacePositions = [];
         const surfaceNormals = [];
         const surfaceValues = [];
+        this.surfaceVerticesNormalized = [];
         const stepX = 2.0 / (gridN - 1);
         const stepY = 2.0 / (gridM - 1);
 
@@ -287,6 +307,8 @@ export class LandscapeApp {
                     surfaceValues.push(hNorm);
                     const n = normalAt(ii, jj);
                     surfaceNormals.push(n[0], n[1], n[2]);
+
+                    this.surfaceVerticesNormalized.push({ x, y, z, valueNorm: hNorm });
                 };
 
                 // Triangle 1: (i,j) (i+1,j) (i,j+1)
@@ -304,6 +326,7 @@ export class LandscapeApp {
         // Nodes
         const nodePositions = [];
         const nodeValues = [];
+        this.currentNodesNormalized = [];
         nodes.forEach(node => {
             const px = Number(node.position[0]);
             const py = Number(node.position[1]);
@@ -314,11 +337,20 @@ export class LandscapeApp {
             const z = zNorm;
             nodePositions.push(x, z, y);
             nodeValues.push(zNorm);
+
+            this.currentNodesNormalized.push({
+                index: node.index,
+                x,
+                y,
+                z,
+                valueNorm: zNorm
+            });
         });
 
         // Links
         const linkPositions = [];
         const linkValues = [];
+        const linkPairs = [];
         const resolveLinkIndices = (link) => {
             if (link == null) return null;
             if (typeof link === 'string') {
@@ -342,6 +374,7 @@ export class LandscapeApp {
         links.forEach(link => {
             const resolved = resolveLinkIndices(link);
             if (!resolved) return;
+            linkPairs.push(resolved);
             const s = nodes[resolved.source];
             const t = nodes[resolved.target];
             if (!s || !t) return;
@@ -419,6 +452,8 @@ export class LandscapeApp {
         this.buffers.surface = surfacePositions.length ? this.createBuffer(new Float32Array(surfacePositions)) : null;
         this.buffers.surfaceNormals = surfaceNormals.length ? this.createBuffer(new Float32Array(surfaceNormals)) : null;
         this.buffers.surfaceValues = surfaceValues.length ? this.createBuffer(new Float32Array(surfaceValues)) : null;
+        const surfaceAlpha = surfaceValues.length ? new Float32Array(surfaceValues.length).fill(1.0) : null;
+        this.buffers.surfaceAlpha = surfaceAlpha ? this.createBuffer(surfaceAlpha, this.gl.DYNAMIC_DRAW) : null;
 
         this.buffers.contourTris = contourTriPositions.length ? this.createBuffer(new Float32Array(contourTriPositions)) : null;
         this.buffers.contourTriValues = contourTriValues.length ? this.createBuffer(new Float32Array(contourTriValues)) : null;
@@ -433,7 +468,14 @@ export class LandscapeApp {
         this.data.contourLineCount = contourLineValues.length;
         this.data.surfaceVertexCount = surfaceValues.length;
 
+        this.linkPairs = linkPairs;
+
         this.updateReferenceGeometry();
+
+        // Reapply existing selection (if any) after data refresh so it persists
+        if (this.selectedNodeIndex !== null) {
+            this.applySelectionHighlight(this.selectedNodeIndex, this.selectedNeighborIndices);
+        }
     }
 
     setShowSurface(flag) {
@@ -445,10 +487,109 @@ export class LandscapeApp {
         }
     }
 
-    createBuffer(data) {
+    applySelectionHighlight(nodeIndex, neighborIndices = []) {
+        if (!this.data || !this.data.nodeCount || !this.gl) {
+            return;
+        }
+
+        this.selectedNodeIndex = Number.isFinite(nodeIndex) ? nodeIndex : null;
+        this.selectedNeighborIndices = neighborIndices || [];
+
+        const hasSelection = this.selectedNodeIndex !== null;
+        const neighborSet = new Set(this.selectedNeighborIndices.filter(Number.isFinite));
+        const selectedOrder = hasSelection ? this.nodeOrderMap[this.selectedNodeIndex] : undefined;
+
+        // Node alpha
+        const nodeAlpha = new Float32Array(this.data.nodeCount);
+        nodeAlpha.fill(hasSelection ? 0.55 : 1.0);
+        if (hasSelection && selectedOrder !== undefined) {
+            nodeAlpha[selectedOrder] = 1.0;
+        }
+        neighborSet.forEach(idx => {
+            const order = this.nodeOrderMap[idx];
+            if (order !== undefined) {
+                nodeAlpha[order] = 0.8;
+            }
+        });
+
+        // Link alpha mirrors vertex order (two vertices per link)
+        const linkAlpha = new Float32Array(this.data.linkCount || 0);
+        const defaultLinkAlpha = hasSelection ? 0.35 : 1.0;
+        linkAlpha.fill(defaultLinkAlpha);
+        const selectedSet = new Set([this.selectedNodeIndex, ...neighborSet].filter(Number.isFinite));
+
+        this.linkPairs.forEach((pair, i) => {
+            const { source, target } = pair;
+            let alpha = defaultLinkAlpha;
+            if (hasSelection && (source === this.selectedNodeIndex || target === this.selectedNodeIndex)) {
+                alpha = 1.0;
+            } else if (selectedSet.has(source) || selectedSet.has(target)) {
+                alpha = 0.7;
+            }
+            const base = i * 2;
+            linkAlpha[base] = alpha;
+            if (base + 1 < linkAlpha.length) {
+                linkAlpha[base + 1] = alpha;
+            }
+        });
+
+        const gl = this.gl;
+        const refreshBuffer = (existing, data) => {
+            if (!existing) {
+                return this.createBuffer(data, gl.DYNAMIC_DRAW);
+            }
+            gl.bindBuffer(gl.ARRAY_BUFFER, existing);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.DYNAMIC_DRAW);
+            return existing;
+        };
+
+        // Surface alpha mask: fade distant regions, keep a bright spot near selection
+        const updateSurfaceAlpha = () => {
+            if (!this.surfaceVerticesNormalized.length || !this.buffers.surfaceAlpha) return;
+            const surfaceAlpha = new Float32Array(this.surfaceVerticesNormalized.length);
+            if (!hasSelection) {
+                surfaceAlpha.fill(1.0);
+            } else {
+                const target = this.currentNodesNormalized.find(n => n.index === this.selectedNodeIndex);
+                if (!target) {
+                    surfaceAlpha.fill(1.0);
+                    this.buffers.surfaceAlpha = refreshBuffer(this.buffers.surfaceAlpha, surfaceAlpha);
+                    return;
+                }
+                const radius = 0.75; // capture even more surrounding area
+                const falloff = radius * 1.75;
+                this.surfaceVerticesNormalized.forEach((v, i) => {
+                    const d = Math.hypot(v.x - target.x, v.y - target.y);
+                    let alpha = 0.22; // slightly brighter base when selected
+                    if (d <= falloff) {
+                        const t = Math.max(0, 1 - (d / falloff));
+                        // Smoothstep
+                        const s = t * t * (3 - 2 * t);
+                        alpha = 0.22 + 0.78 * s;
+                    }
+                    surfaceAlpha[i] = alpha;
+                });
+            }
+
+            this.buffers.surfaceAlpha = refreshBuffer(this.buffers.surfaceAlpha, surfaceAlpha);
+        };
+
+        updateSurfaceAlpha();
+
+        this.buffers.nodeAlpha = refreshBuffer(this.buffers.nodeAlpha, nodeAlpha);
+        if (linkAlpha.length) {
+            this.buffers.linkAlpha = refreshBuffer(this.buffers.linkAlpha, linkAlpha);
+        }
+
+        if (this.render) {
+            requestAnimationFrame(this.render);
+        }
+    }
+
+    createBuffer(data, usage = this.gl.STATIC_DRAW) {
         const buffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
-        this.gl.bufferData(this.gl.ARRAY_BUFFER, data, this.gl.STATIC_DRAW);
+        this.gl.bufferData(this.gl.ARRAY_BUFFER, data, usage);
         return buffer;
     }
 
@@ -588,15 +729,14 @@ export class LandscapeApp {
         this.gl.uniform3fv(this.uniformLocations.lightDir, new Float32Array([0.3, 0.8, 0.5]));
 
         const disableNormal = () => this.gl.disableVertexAttribArray(this.attribLocations.vertexNormal);
-        const setAlphaConst = (a) => {
-            this.gl.disableVertexAttribArray(this.attribLocations.vertexAlpha);
-            this.gl.vertexAttrib1f(this.attribLocations.vertexAlpha, a);
-        };
-        const bindAlphaBuffer = (buf) => {
+        const bindAlphaBuffer = (buf, fallbackAlpha = 1.0) => {
             if (buf) {
                 this.gl.enableVertexAttribArray(this.attribLocations.vertexAlpha);
                 this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buf);
                 this.gl.vertexAttribPointer(this.attribLocations.vertexAlpha, 1, this.gl.FLOAT, false, 0, 0);
+            } else {
+                this.gl.disableVertexAttribArray(this.attribLocations.vertexAlpha);
+                this.gl.vertexAttrib1f(this.attribLocations.vertexAlpha, fallbackAlpha);
             }
         };
 
@@ -612,7 +752,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            setAlphaConst(1.0);
+            bindAlphaBuffer(null, 1.0);
             this.gl.drawArrays(this.gl.LINES, 0, this.gridVertexCount);
         }
 
@@ -628,7 +768,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            setAlphaConst(1.0);
+            bindAlphaBuffer(null, 1.0);
             this.gl.drawArrays(this.gl.LINES, 0, this.axisVertexCount);
         }
 
@@ -646,7 +786,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            setAlphaConst(1.0);
+            bindAlphaBuffer(this.buffers.surfaceAlpha, 1.0);
             this.gl.drawArrays(this.gl.TRIANGLES, 0, this.data.surfaceVertexCount);
         }
 
@@ -662,7 +802,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            bindAlphaBuffer(this.buffers.contourTriAlpha);
+            bindAlphaBuffer(this.buffers.contourTriAlpha, 1.0);
             this.gl.drawArrays(this.gl.TRIANGLES, 0, this.data.contourTriCount);
         }
 
@@ -678,9 +818,10 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            bindAlphaBuffer(this.buffers.contourLineAlpha);
+            bindAlphaBuffer(this.buffers.contourLineAlpha, 1.0);
             this.gl.drawArrays(this.gl.LINES, 0, this.data.contourLineCount);
         }
+
 
         // Links
         if (this.data.linkCount > 0) {
@@ -694,7 +835,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            setAlphaConst(1.0);
+            bindAlphaBuffer(this.buffers.linkAlpha, 1.0);
             this.gl.drawArrays(this.gl.LINES, 0, this.data.linkCount);
         }
 
@@ -710,7 +851,7 @@ export class LandscapeApp {
             this.gl.vertexAttribPointer(this.attribLocations.vertexValue, 1, this.gl.FLOAT, false, 0, 0);
             this.gl.enableVertexAttribArray(this.attribLocations.vertexValue);
 
-            setAlphaConst(1.0);
+            bindAlphaBuffer(this.buffers.nodeAlpha, 1.0);
             this.gl.drawArrays(this.gl.POINTS, 0, this.data.nodeCount);
         }
 
